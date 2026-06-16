@@ -1,0 +1,111 @@
+Step 1: Verify Architecture
+uname -m
+Expected:
+arm64
+Step 2: Download Prometheus
+Download:
+prometheus-3.12.0.darwin-arm64.tar.gz
+Step 3: Extract Prometheus
+cd ~/Downloads
+
+tar -xzf prometheus-3.12.0.darwin-arm64.tar.gz
+
+cd prometheus-3.12.0.darwin-arm64
+Step 4: Remove macOS Quarantine
+xattr -dr com.apple.quarantine .
+Step 5: Verify Prometheus Binary
+file ./prometheus
+Expected:
+Mach-O 64-bit executable arm64
+Step 6: Start Prometheus
+./prometheus --config.file=prometheus.yml
+Expected:
+Server is ready to receive web requests.
+Step 7: Open Prometheus UI
+Browser:
+http://localhost:9090
+Step 8: Verify Prometheus Works
+PromQL:
+up
+Expected:
+up{job="prometheus"} 1
+Step 9: Download Node Exporter
+Download:
+node_exporter-1.9.x.darwin-arm64.tar.gz
+(Use the latest available version.)
+Step 10: Extract Node Exporter
+cd ~/Downloads
+
+tar -xzf node_exporter-*.darwin-arm64.tar.gz
+
+cd node_exporter-*
+Step 11: Verify Binary
+file ./node_exporter
+Expected:
+Mach-O 64-bit executable arm64
+Step 12: Remove macOS Quarantine
+xattr -dr com.apple.quarantine .
+Step 13: Start Node Exporter
+Open a NEW terminal:
+cd ~/Downloads/node_exporter-*
+./node_exporter
+Expected:
+Listening on :9100
+Step 14: Verify Metrics Endpoint
+Open:
+http://localhost:9100/metrics
+You should see thousands of metrics.
+Step 15: Update prometheus.yml
+Open:
+nano ~/Downloads/prometheus-3.12.0.darwin-arm64/prometheus.yml
+Add Node Exporter:
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: "node-exporter"
+    static_configs:
+      - targets: ["localhost:9100"]
+Save:
+CTRL + O
+ENTER
+CTRL + X
+Step 16: Restart Prometheus
+Stop:
+CTRL + C
+Start again:
+./prometheus --config.file=prometheus.yml
+Step 17: Verify Targets
+Go to:
+Status → Targets
+Expected:
+prometheus      UP
+node-exporter   UP
+Step 18: CPU Monitoring
+PromQL:
+100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+Shows CPU utilization %.
+Step 19: Memory Monitoring
+(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes)
+/
+node_memory_MemTotal_bytes * 100
+Shows memory utilization %.
+Step 20: Disk Monitoring
+100 -
+(node_filesystem_avail_bytes * 100 /
+node_filesystem_size_bytes)
+Shows disk usage %.
+Step 21: Network Monitoring
+Incoming traffic:
+rate(node_network_receive_bytes_total[5m])
+Outgoing traffic:
+rate(node_network_transmit_bytes_total[5m])
+Step 22: System Load
+node_load1
+Step 23: System Uptime
+node_time_seconds - node_boot_time_seconds
